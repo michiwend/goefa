@@ -48,7 +48,7 @@ type efaResult interface {
 	endpoint() string
 }
 
-type efaResponse struct {
+type EFAResponse struct {
 	XMLName xml.Name `xml:"itdRequest"`
 
 	client     string `xml:"client,attr"`
