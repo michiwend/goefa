@@ -53,15 +53,17 @@ type EFADeparture struct {
 	EFADepartureArrival `xml:"itdDeparture"`
 }
 
+type odv struct {
+    OdvPlace struct {
+    }
+    OdvName struct {
+        State string `xml:"state,attr"`
+    } `xml:"itdOdvName"`
+}
+
 type departureMonitorResult struct {
 	EFAResponse
-	Odv struct {
-		OdvPlace struct {
-		}
-		OdvName struct {
-			State string `xml:"state,attr"`
-		} `xml:"itdOdvName"`
-	} `xml:"itdDepartureMonitorRequest>itdOdv"`
+	Odv odv `xml:"itdDepartureMonitorRequest>itdOdv"`
 	Departures []*EFADeparture `xml:"itdDepartureMonitorRequest>itdDepartureList>itdDeparture"`
 }
 
