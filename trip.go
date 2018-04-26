@@ -27,8 +27,14 @@ import (
     "net/url"
 )
 
+
 type tripResult struct {
    EFAResponse
+   Odv []struct {
+    odv
+    Usage string `xml:"usage,attr"`
+   } `xml:"itdTripRequest>itdOdv"`
+
    Xml string `xml:",innerxml"`
 }
 
@@ -36,7 +42,7 @@ func (t *tripResult) endpoint() string {
     return "XML_TRIP_REQUEST2"
 }
 
-func (efa *EFAProvider) Trip(origin, via, destination EFAStop, time time.Time, depArr string) (*tripResult, error) {
+func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr string) (*tripResult, error) {
     params := url.Values{
         "locationServerActive":         {"1"},
         "stateless":                    {"1"},
