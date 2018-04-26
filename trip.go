@@ -16,12 +16,48 @@
  *
  * Authors:
  *   Michael Wendland <michael@michiwend.com>
+ *   Adrian Schneider <github@ardy.io>
  */
 
 package goefa
 
-import "time"
+import (
+    "time"
+    "strconv"
+    "net/url"
+)
 
-func (efa *EFAProvider) Trip(origin EFAStop, via EFAStop, destination EFAStop, time time.Time) error {
-	return nil
+type tripResult struct {
+   EFAResponse
+   Xml string `xml:",innerxml"`
+}
+
+func (t *tripResult) endpoint() string {
+    return "XML_TRIP_REQUEST2"
+}
+
+func (efa *EFAProvider) Trip(origin, via, destination EFAStop, time time.Time, depArr string) (*tripResult, error) {
+    params := url.Values{
+        "locationServerActive":         {"1"},
+        "stateless":                    {"1"},
+        "itdDate":                      {time.Format("20060102")},
+        "itdTime":                      {time.Format("1504")},
+        "itdTripDateTimeDepArr":        {depArr},
+        "nameInfo_origin":              {strconv.Itoa(origin.Id)},
+        "type_origin":                  {"any"},
+        "nameInfo_destination":         {strconv.Itoa(destination.Id)},
+        "type_destination":             {"any"},
+    }
+//    if false {
+//        params.Set("nameInfo_via", strconv.Itoa(via.Id))
+//        params.Set("type_via", "any")
+//    }
+
+    var result tripResult
+
+    if err := efa.postRequest(&result, params); err != nil {
+        return nil, err
+    }
+
+    return &result, nil
 }
