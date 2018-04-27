@@ -33,5 +33,19 @@ func main() {
         log.Panic(err)
     }
 
-    fmt.Println(routes.Xml)
+    fmt.Println(routes)
+
+    for _, route := range routes {
+        fmt.Printf("Parts: %+v, %+v\n", route.RouteParts, route.PublicDuration)
+        for _, routePart := range route.RouteParts {
+            for _, ter := range routePart.Termini {
+                fmt.Printf("Termini: %+v\n", ter.Name)
+            }
+            fmt.Printf("MOT: %+v\n", routePart.MeansOfTransport)
+
+            for _, stop := range routePart.Stops {
+                fmt.Printf("\t%+v\n", stop)
+            }
+        }
+    }
 }
