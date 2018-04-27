@@ -44,18 +44,20 @@ func main() {
         log.Panic(err)
     }
 
-    fmt.Println(routes)
+    fmt.Printf("Found %v routes:\n", len(routes))
 
-    for _, route := range routes {
-        fmt.Printf("Parts: %+v, %+v\n", route.RouteParts, route.PublicDuration)
+    for i, route := range routes {
+        fmt.Printf("Route %v, takes %v\n", i, route.PublicDuration)
+
         for _, routePart := range route.RouteParts {
-            for _, ter := range routePart.Termini {
-                fmt.Printf("Termini: %+v\n", ter.Name)
-            }
-            fmt.Printf("MOT: %+v\n", routePart.MeansOfTransport)
+            f, t := routePart.Termini[0], routePart.Termini[1]
+            mot := routePart.MeansOfTransport
+            fmt.Printf("\tFrom %v, %v to %v, %v\n", f.Name, f.TimeActual, t.Name, t.TimeActual)
+            fmt.Printf("\tUsing %v to %v\n", mot.Shortname, mot.Destination)
 
             for _, stop := range routePart.Stops {
-                fmt.Printf("\t%+v\n", stop)
+                t := len(stop.Times) - 1
+                fmt.Printf("\t\t%v\t%v\n", stop.Times[t], stop.Name)
             }
         }
     }
