@@ -3,15 +3,26 @@ package main
 import (
     "fmt"
     "log"
+    "flag"
     "time"
     
     "github.com/michiwend/goefa"
 )
 
 func main() {
-    provider, _ := goefa.ProviderFromJson("mvv")
 
-    _, stops, err := provider.FindStop("Innsbrucker Ring")
+	pname := flag.String("provider", "mvv", "Short name for the EFA Provider")
+    start := flag.String("start", "Moosach", "Start station for Trip")
+    destination := flag.String("destination", "Obersendling", "Destination for Trip")
+    flag.Parse()
+
+    provider, err := goefa.ProviderFromJson(*pname)
+
+    if err != nil {
+        log.Panic(err)
+    }
+
+    _, stops, err := provider.FindStop(*start)
 
     if err != nil {
         log.Panic(err)
@@ -19,7 +30,7 @@ func main() {
 
     from := stops[0]
 
-    _, stops, err = provider.FindStop("Hauptbahnhof")
+    _, stops, err = provider.FindStop(*destination)
 
     if err != nil {
         log.Panic(err)
