@@ -28,12 +28,71 @@ import (
 )
 
 
+type EFARouteStop struct {
+    //FIXME: This is basically the same as EFAStop with slightly different attr names
+	Id              int     `xml:"stopID,attr"`
+	Name            string  `xml:"name,attr"`
+	Locality        string  `xml:"locality,attr"`
+	Lat             float64 `xml:"x,attr"`
+	Lng             float64 `xml:"y,attr"`
+	IsTransferStop  bool
+
+    Platform struct {
+        Id          string  `xml:"platform"`
+        Name        string  `xml:"platformName"`
+    }
+
+    Times []EFATime         `xml:"itdDateTime"`
+
+	Provider *EFAProvider
+}
+
+type EFAMeansOfTransport struct {
+    Name            string              `xml:"name,attr"`
+    Shortname       string              `xml:"shortname,attr"`
+    Symbol          string              `xml:"symbol,attr"`
+    Type            EFAMotType          `xml:"motType,attr"`
+    ProductName     string              `xml:"productName,attr"`
+    Destination     string              `xml:"destination,attr"`
+    DestId          int                 `xml:"destID,attr"`
+    Network         string              `xml:"network,attr"`
+
+	ROP             int                 `xml:"ROP,attr"`
+	STT             int                 `xml:"STT,attr"`
+	TTB             int                 `xml:"TTB,attr"`
+
+    Description     string              `xml:"itdRouteDescText"`
+}
+
+type EFAPartialRoute struct {
+    //TODO: Duration
+    Minutes             string              `xml:"timeMinute,attr"`
+    Termini             []struct{
+        EFARouteStop
+        TimeActual      EFATime             `xml:"itdDateTime"`
+        TimeTarget      EFATime             `xml:"itdDateTimeTarget"`
+        Usage           string              `xml:"usage,attr"`
+    }    `xml:"itdPoint"`
+
+    MeansOfTransport    EFAMeansOfTransport `xml:"itdMeansOfTransport"`
+    Stops               []*EFARouteStop     `xml:"itdStopSeq>itdPoint"`
+}
+
+type EFARoute struct {
+    //TODO: Duration
+    //TODO: DurationVehicle
+    PublicDuration  string              `xml:"publicDuration,attr"`
+    RouteParts      []*EFAPartialRoute  `xml:"itdPartialRouteList>itdPartialRoute"`
+}
+
 type tripResult struct {
    EFAResponse
-   Odv []struct {
-    odv
-    Usage string `xml:"usage,attr"`
+   Odv      []struct {
+        odv
+        Usage   string  `xml:"usage,attr"`
    } `xml:"itdTripRequest>itdOdv"`
+
+   Routes   []*EFARoute  `xml:"itdTripRequest>itdItinerary>itdRouteList>itdRoute"`
 
    Xml string `xml:",innerxml"`
 }
@@ -42,7 +101,7 @@ func (t *tripResult) endpoint() string {
     return "XML_TRIP_REQUEST2"
 }
 
-func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr string) (*tripResult, error) {
+func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr string) ([]*EFARoute, error) {
     params := url.Values{
         "locationServerActive":         {"1"},
         "stateless":                    {"1"},
@@ -65,5 +124,5 @@ func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr
         return nil, err
     }
 
-    return &result, nil
+    return result.Routes, nil
 }
