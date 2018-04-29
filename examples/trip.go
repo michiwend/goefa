@@ -47,7 +47,7 @@ func main() {
     fmt.Printf("Found %v routes:\n", len(routes))
 
     for i, route := range routes {
-        fmt.Printf("Route %v, takes %v\n", i, route.PublicDuration)
+        fmt.Printf("Route %v, takes %v\n", i, route.DurationPublic)
 
         for _, routePart := range route.RouteParts {
             f, t := routePart.Termini[0], routePart.Termini[1]

@@ -79,10 +79,11 @@ type EFAPartialRoute struct {
 }
 
 type EFARoute struct {
-    //TODO: Duration
-    //TODO: DurationVehicle
-    PublicDuration  string              `xml:"publicDuration,attr"`
-    RouteParts      []*EFAPartialRoute  `xml:"itdPartialRouteList>itdPartialRoute"`
+    DurationPublic      EFADuration         `xml:"publicDuration,attr"`
+    DurationIndividual  EFADuration         `xml:"individualDuration,attr"`
+    DurationVehicle     EFADuration         `xml:"vehicleTime,attr"`
+
+    RouteParts          []*EFAPartialRoute  `xml:"itdPartialRouteList>itdPartialRoute"`
 }
 
 type tripResult struct {
