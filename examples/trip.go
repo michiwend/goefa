@@ -52,7 +52,7 @@ func main() {
         for _, routePart := range route.RouteParts {
             f, t := routePart.Termini[0], routePart.Termini[1]
             mot := routePart.MeansOfTransport
-            fmt.Printf("\tFrom %v, %v to %v, %v\n", f.Name, f.TimeActual, t.Name, t.TimeActual)
+            fmt.Printf("\tFrom %v, %v to %v, %v (%v)\n", f.Name, f.TimeActual, t.Name, t.TimeActual, routePart.Duration)
             fmt.Printf("\tUsing %v to %v\n", mot.Shortname, mot.Destination)
 
             for _, stop := range routePart.Stops {

@@ -25,6 +25,7 @@ import (
     "time"
     "strconv"
     "net/url"
+    "encoding/xml"
 )
 
 
@@ -64,9 +65,9 @@ type EFAMeansOfTransport struct {
     Description     string              `xml:"itdRouteDescText"`
 }
 
-type EFAPartialRoute struct {
-    //TODO: Duration
-    Minutes             string              `xml:"timeMinute,attr"`
+type EFARoutePart struct {
+    //TODO: Footpaths
+    Duration            time.Duration
     Termini             []struct{
         EFARouteStop
         TimeActual      EFATime             `xml:"itdDateTime"`
@@ -78,12 +79,48 @@ type EFAPartialRoute struct {
     Stops               []*EFARouteStop     `xml:"itdStopSeq>itdPoint"`
 }
 
+func (rp *EFARoutePart) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+
+    // This is really shitty code but I couldn't find a better way of doing it :/
+    type tmp struct {
+        Minutes         int                 `xml:"timeMinute,attr"`
+        Hours           int                 `xml:"timeHour"`
+        Termini             []struct{
+            EFARouteStop
+            TimeActual      EFATime             `xml:"itdDateTime"`
+            TimeTarget      EFATime             `xml:"itdDateTimeTarget"`
+            Usage           string              `xml:"usage,attr"`
+        }    `xml:"itdPoint"`
+
+        MeansOfTransport    EFAMeansOfTransport `xml:"itdMeansOfTransport"`
+        Stops               []*EFARouteStop     `xml:"itdStopSeq>itdPoint"`
+    }
+
+    var content tmp
+
+    if err := d.DecodeElement(&content, &start); err != nil {
+        return err
+    }
+
+    ns := content.Minutes * 60000000000 +
+          content.Hours * 3600000000000
+
+    dur := time.Duration(ns)
+
+    rp.Duration = dur
+    rp.Termini = content.Termini
+    rp.MeansOfTransport = content.MeansOfTransport
+    rp.Stops = content.Stops
+
+    return nil
+}
+
 type EFARoute struct {
     DurationPublic      EFADuration         `xml:"publicDuration,attr"`
     DurationIndividual  EFADuration         `xml:"individualDuration,attr"`
     DurationVehicle     EFADuration         `xml:"vehicleTime,attr"`
 
-    RouteParts          []*EFAPartialRoute  `xml:"itdPartialRouteList>itdPartialRoute"`
+    RouteParts          []*EFARoutePart  `xml:"itdPartialRouteList>itdPartialRoute"`
 }
 
 type tripResult struct {
@@ -103,6 +140,7 @@ func (t *tripResult) endpoint() string {
 }
 
 func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr string) ([]*EFARoute, error) {
+    //TODO: add via routing
     params := url.Values{
         "locationServerActive":         {"1"},
         "stateless":                    {"1"},
