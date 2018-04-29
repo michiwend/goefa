@@ -31,12 +31,13 @@ import (
 
 type EFARouteStop struct {
     //FIXME: This is basically the same as EFAStop with slightly different attr names
+    //(Though it actually can represent other points, e.g. within stations)
 	Id              int     `xml:"stopID,attr"`
 	Name            string  `xml:"name,attr"`
 	Locality        string  `xml:"locality,attr"`
 	Lat             float64 `xml:"x,attr"`
 	Lng             float64 `xml:"y,attr"`
-	IsTransferStop  bool
+    Area            int     `xml:"area,attr"`
 
     Platform struct {
         Id          string  `xml:"platform"`
@@ -65,8 +66,21 @@ type EFAMeansOfTransport struct {
     Description     string              `xml:"itdRouteDescText"`
 }
 
+type EFAFootpathElem struct {
+    Description     string              `xml:"description,attr"`
+    Type            string              `xml:"type,attr"`
+    VertDirection   string              `xml:"level,attr"`
+    Points          []*EFARouteStop     `xml:"itdPoint"`
+}
+
+type EFAFootpathInfo struct {
+    Position        string              `xml:"position,attr"`
+    Duration        EFADuration         `xml:"duration,attr"`
+    Elements        []*EFAFootpathElem  `xml:"itdFootPathElem"`
+}
+
 type EFARoutePart struct {
-    //TODO: Footpaths
+    //TODO: Footpath description/coordinates
     Duration            time.Duration
     Termini             []struct{
         EFARouteStop
@@ -77,6 +91,10 @@ type EFARoutePart struct {
 
     MeansOfTransport    EFAMeansOfTransport `xml:"itdMeansOfTransport"`
     Stops               []*EFARouteStop     `xml:"itdStopSeq>itdPoint"`
+    Footpath            struct {
+        // Contains info for within station, e.g. stairs, ramps, escalators
+        EFAFootpathInfo                     `xml:"itdFootPathInfo"`
+    }
 }
 
 func (rp *EFARoutePart) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -94,6 +112,10 @@ func (rp *EFARoutePart) UnmarshalXML(d *xml.Decoder, start xml.StartElement) err
 
         MeansOfTransport    EFAMeansOfTransport `xml:"itdMeansOfTransport"`
         Stops               []*EFARouteStop     `xml:"itdStopSeq>itdPoint"`
+        Footpath            struct {
+            // Contains info for within station, e.g. stairs, ramps, escalators
+            EFAFootpathInfo                     `xml:"itdFootPathInfo"`
+        }
     }
 
     var content tmp
@@ -111,6 +133,7 @@ func (rp *EFARoutePart) UnmarshalXML(d *xml.Decoder, start xml.StartElement) err
     rp.Termini = content.Termini
     rp.MeansOfTransport = content.MeansOfTransport
     rp.Stops = content.Stops
+    rp.Footpath = content.Footpath
 
     return nil
 }
@@ -141,6 +164,7 @@ func (t *tripResult) endpoint() string {
 
 func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr string) ([]*EFARoute, error) {
     //TODO: add via routing
+    //TODO: add mobility and routing preferences
     params := url.Values{
         "locationServerActive":         {"1"},
         "stateless":                    {"1"},
