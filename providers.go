@@ -24,13 +24,24 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+    "runtime"
+    "path"
 )
+
+func getLocalPath() string {
+    _, filename, _, ok := runtime.Caller(0)
+    if !ok {
+        panic("No caller information")
+    }
+    return path.Dir(filename)
+}
 
 // ProviderFromJson parses providers.json. If a json object matches short_name
 // a pointer to the corresponding EFAProvider is returned.
 func ProviderFromJson(short_name string) (*EFAProvider, error) {
 
-	content, err := ioutil.ReadFile("providers.json")
+    p := path.Join(getLocalPath(), "providers.json")
+	content, err := ioutil.ReadFile(p)
 
 	if err != nil {
 		return nil, err
