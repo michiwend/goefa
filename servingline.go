@@ -54,5 +54,5 @@ type EFAServingLine struct {
 
 	MotType EFAMotType `xml:"motType,attr"`
 
-	DestStopID int `xml:"destID"` //FIXME assign EFAStop
+	DestStopID int `xml:"destID,attr"` //FIXME assign EFAStop
 }
