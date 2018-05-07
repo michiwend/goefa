@@ -44,7 +44,7 @@ func (stop *EFAStop) Departures(due time.Time, results int) ([]*EFADeparture, er
 }
 
 func (stop *EFAStop) DeparturesForLines(due time.Time, results int, lines []*EFAServingLine) ([]*EFADeparture, error) {
-    return stop.Provider.Departures(stop.Id, due, results, lines)
+    return stop.Provider.DeparturesForLines(stop.Id, due, results, lines)
 }
 
 func (stop *EFAStop) Lines() ([]*EFAServingLine, error) {
