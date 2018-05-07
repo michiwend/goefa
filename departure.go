@@ -114,6 +114,10 @@ func (dr *DepartureRequest) GetParams() url.Values {
 // order to get the very next departures. The third argument determines how
 // many results will be returned by EFA.
 func (efa *EFAProvider) Departures(stopID int, due time.Time, results int) ([]*EFADeparture, error) {
+    return efa.DeparturesForLines(stopID, due, results, nil)
+}
+
+func (efa *EFAProvider) DeparturesForLines(stopID int, due time.Time, results int, lines []*EFAServingLine) ([]*EFADeparture, error) {
 	var rt string
 
 	if efa.EnableRealtime {
@@ -126,6 +130,7 @@ func (efa *EFAProvider) Departures(stopID int, due time.Time, results int) ([]*E
 		StopId:		stopID,
 		Time:		due,
 		Results:	results,
+		Lines:      lines,
 	}
 
 	params := req.GetParams()
@@ -138,7 +143,6 @@ func (efa *EFAProvider) Departures(stopID int, due time.Time, results int) ([]*E
 	}
 
 	return result.Departures, nil
-
 }
 
 // Lines performs a stateless dm_request for the corresponding stopID and
