@@ -43,6 +43,10 @@ func (stop *EFAStop) Departures(due time.Time, results int) ([]*EFADeparture, er
 	return stop.Provider.Departures(stop.Id, due, results)
 }
 
+func (stop *EFAStop) Lines() ([]*EFAServingLine, error) {
+    return stop.Provider.Lines(stop.Id)
+}
+
 type stopFinderResult struct {
 	EFAResponse
 	Odv struct {

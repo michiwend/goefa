@@ -64,7 +64,8 @@ type odv struct {
 type departureMonitorResult struct {
 	EFAResponse
 	Odv odv `xml:"itdDepartureMonitorRequest>itdOdv"`
-	Departures []*EFADeparture `xml:"itdDepartureMonitorRequest>itdDepartureList>itdDeparture"`
+	Lines		[]*EFAServingLine	`xml:"itdDepartureMonitorRequest>itdServingLines>itdServingLine"`
+	Departures	[]*EFADeparture		`xml:"itdDepartureMonitorRequest>itdDepartureList>itdDeparture"`
 }
 
 func (d *departureMonitorResult) endpoint() string {
@@ -138,4 +139,23 @@ func (efa *EFAProvider) Departures(stopID int, due time.Time, results int) ([]*E
 
 	return result.Departures, nil
 
+}
+
+// Lines performs a stateless dm_request for the corresponding stopID and
+// returns an array of EFAServingLines.
+func (efa *EFAProvider) Lines(stopID int) ([]*EFAServingLine, error) {
+	req := DepartureRequest{
+		StopId:		stopID,
+		Time:		time.Now(),
+	}
+
+	params := req.GetParams()
+
+	var result departureMonitorResult
+
+	if err := efa.postRequest(&result, params); err != nil {
+		return nil, err
+	}
+
+	return result.Lines, nil
 }
