@@ -34,7 +34,7 @@ type EFADepartureArrival struct {
 	MapName      string `xml:"mapName,attr"`
 	Platform     string `xml:"platform,attr"`
 	PlatformName string `xml:"platformName,attr"`
-	StopID       int    `xml:"displayName,attr"`
+	StopID       int    `xml:"stopID,attr"`
 	StopName     string `xml:"stopName,attr"`
 	Lat          int64  `xml:"x,attr"`
 	Lng          int64  `xml:"y,attr"`
@@ -53,15 +53,17 @@ type EFADeparture struct {
 	EFADepartureArrival `xml:"itdDeparture"`
 }
 
+type odv struct {
+    OdvPlace struct {
+    }
+    OdvName struct {
+        State string `xml:"state,attr"`
+    } `xml:"itdOdvName"`
+}
+
 type departureMonitorResult struct {
-	efaResponse
-	Odv struct {
-		OdvPlace struct {
-		}
-		OdvName struct {
-			State string `xml:"state,attr"`
-		} `xml:"itdOdvName"`
-	} `xml:"itdDepartureMonitorRequest>itdOdv"`
+	EFAResponse
+	Odv odv `xml:"itdDepartureMonitorRequest>itdOdv"`
 	Departures []*EFADeparture `xml:"itdDepartureMonitorRequest>itdDepartureList>itdDeparture"`
 }
 

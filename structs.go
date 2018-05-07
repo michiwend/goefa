@@ -23,6 +23,7 @@ package goefa
 import (
 	"encoding/xml"
 	"time"
+    "strings"
 )
 
 // EFATime implements UnmarshalXML to support unmarshalling EFAs XML DateTime
@@ -70,4 +71,36 @@ func (t *EFATime) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	t.Time = &tmp
 
 	return nil
+}
+
+// Durations are stored in *three* different ways in the XML:
+// 1. In one Attribute, just in minutes
+// 2. In one Attribute, as "hh:mm"
+// 3. In multiple Attributes, as "timeMinute", "timeHour" (needs more investigating)
+// 
+// If EFADuration is unmarshalled on a single xml attribute, 1 or 2 is used, 
+// if unmarshalled on an xml element, case 3 is used.
+type EFADuration struct {
+    *time.Duration
+}
+
+
+
+func (dur *EFADuration) UnmarshalXMLAttr(attr xml.Attr) error {
+    var duration time.Duration
+    var err error
+
+    if strings.Contains(attr.Value, ":"){
+        timestring := strings.Replace(attr.Value, ":", "h", 1) + "m"
+        duration, err = time.ParseDuration(timestring)
+    } else {
+        timestring := attr.Value + "m"
+        duration, err = time.ParseDuration(timestring)
+    }
+
+    if err != nil {
+        return err
+    }
+    dur.Duration = &duration
+    return nil
 }
