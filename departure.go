@@ -34,7 +34,7 @@ type EFADepartureArrival struct {
 	MapName      string `xml:"mapName,attr"`
 	Platform     string `xml:"platform,attr"`
 	PlatformName string `xml:"platformName,attr"`
-	StopID       int    `xml:"displayName,attr"`
+	StopID       int    `xml:"stopID,attr"`
 	StopName     string `xml:"stopName,attr"`
 	Lat          int64  `xml:"x,attr"`
 	Lng          int64  `xml:"y,attr"`
