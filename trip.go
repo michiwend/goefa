@@ -162,30 +162,73 @@ func (t *tripResult) endpoint() string {
     return "XML_TRIP_REQUEST2"
 }
 
-func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr string) ([]*EFARoute, error) {
-    //TODO: add via routing
-    //TODO: add mobility and routing preferences
+type TripRequest struct {
+    Params          *url.Values
+    Time            time.Time
+    DepArr          string
+    Origin          EFAStop
+    Destination     EFAStop
+    Via             string
+    IncludeMOT      []*EFAMotType
+}
+
+func (tr *TripRequest) getDefaultParams() url.Values {
     params := url.Values{
         "locationServerActive":         {"1"},
         "stateless":                    {"1"},
-        "itdDate":                      {time.Format("20060102")},
-        "itdTime":                      {time.Format("1504")},
-        "itdTripDateTimeDepArr":        {depArr},
-        "nameInfo_origin":              {strconv.Itoa(origin.Id)},
         "type_origin":                  {"any"},
-        "nameInfo_destination":         {strconv.Itoa(destination.Id)},
         "type_destination":             {"any"},
+        "type_via":                     {"any"},
     }
-//    if false {
-//        params.Set("nameInfo_via", strconv.Itoa(via.Id))
-//        params.Set("type_via", "any")
-//    }
+    return params
+}
 
+func (tr *TripRequest) GetParams() url.Values {
+    var params url.Values
+    if tr.Params == nil {
+        params = tr.getDefaultParams()
+    } else {
+        params = *tr.Params
+    }
+
+    params.Set("itdDate", tr.Time.Format("20060102"))
+    params.Set("itdTime", tr.Time.Format("1504"))
+    params.Set("itdTripDateTimeDepArr", tr.DepArr)
+    params.Set("nameInfo_origin", strconv.Itoa(tr.Origin.Id))
+    params.Set("nameInfo_destination", strconv.Itoa(tr.Destination.Id))
+    if tr.Via != "" {
+        params.Set("name_via", tr.Via)
+    }
+    if len(tr.IncludeMOT) > 0 {
+        //params.Set("includedMeans", "1")
+        for _, mot := range tr.IncludeMOT {
+            params.Set("inclMOT_" + strconv.Itoa(int(*mot)), "on")
+        }
+    }
+    return params
+}
+
+func (efa *EFAProvider) DoTripRequest(req *TripRequest) (*tripResult, error) {
     var result tripResult
-
+    params := req.GetParams()
     if err := efa.postRequest(&result, params); err != nil {
         return nil, err
     }
+    return &result, nil
+}
 
-    return result.Routes, nil
+func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr string) ([]*EFARoute, error) {
+    //TODO: add mobility and routing preferences
+    req := TripRequest{
+         Origin:        origin,
+         Destination:   destination,
+         Time:          time,
+         DepArr:        depArr,
+    }
+
+    res, err := efa.DoTripRequest(&req)
+    if err != nil {
+        return nil, err
+    }
+    return res.Routes, nil
 }
