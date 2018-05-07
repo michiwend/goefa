@@ -71,6 +71,43 @@ func (d *departureMonitorResult) endpoint() string {
 	return "XML_DM_REQUEST"
 }
 
+type DepartureRequest struct {
+	Params				*url.Values
+	StopId				int
+	Time				time.Time
+	Results				int
+	Lines				[]*EFAServingLine
+}
+
+func (dr *DepartureRequest) getDefaultParams() url.Values {
+	params := url.Values{
+		"type_dm":				{"any"},
+		"locationServerActive": {"1"},
+		"mode":					{"direct"},
+		"stateless":			{"1"},
+	}
+	return params
+}
+
+func (dr *DepartureRequest) GetParams() url.Values {
+	var params url.Values
+	if dr.Params == nil {
+		params = dr.getDefaultParams()
+	} else {
+		params = *dr.Params
+	}
+
+	params.Set("name_dm", strconv.Itoa(dr.StopId))
+	params.Set("itdDate", dr.Time.Format("20060102"))
+	params.Set("itdTime", dr.Time.Format("1504"))
+	params.Set("limit", strconv.Itoa(dr.Results))
+
+	for _, line := range dr.Lines {
+		params.Add("line", line.Stateless)
+	}
+	return params
+}
+
 // Departures performs a stateless dm_request for the corresponding stopID and
 // returns an array of EFADepartures. Use time.Now() as the second argument in
 // order to get the very next departures. The third argument determines how
@@ -84,18 +121,14 @@ func (efa *EFAProvider) Departures(stopID int, due time.Time, results int) ([]*E
 		rt = "0"
 	}
 
-	params := url.Values{
-		"type_dm":              {"any"},
-		"name_dm":              {strconv.Itoa(stopID)},
-		"locationServerActive": {"1"},
-		"useRealtime":          {rt},
-		"dmLineSelection":      {"all"}, //FIXME enable line selection
-		"limit":                {strconv.Itoa(results)},
-		"mode":                 {"direct"},
-		"stateless":            {"1"},
-		"itdDate":              {due.Format("20060102")},
-		"itdTime":              {due.Format("1504")},
+	req := DepartureRequest{
+		StopId:		stopID,
+		Time:		due,
+		Results:	results,
 	}
+
+	params := req.GetParams()
+	params.Set("useRealtime", rt)
 
 	var result departureMonitorResult
 
