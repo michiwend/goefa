@@ -168,8 +168,8 @@ type TripRequest struct {
     DepArr          string
     Origin          EFAStop
     Destination     EFAStop
-    Via             string
-    IncludeMOT      []*EFAMotType
+    Via             EFAStop
+    IncludeMOT      []EFAMotType
 }
 
 func (tr *TripRequest) getDefaultParams() url.Values {
@@ -196,13 +196,13 @@ func (tr *TripRequest) GetParams() url.Values {
     params.Set("itdTripDateTimeDepArr", tr.DepArr)
     params.Set("nameInfo_origin", strconv.Itoa(tr.Origin.Id))
     params.Set("nameInfo_destination", strconv.Itoa(tr.Destination.Id))
-    if tr.Via != "" {
-        params.Set("name_via", tr.Via)
+    if tr.Via.Id != 0 {
+        params.Set("name_via", strconv.Itoa(tr.Via.Id))
     }
     if len(tr.IncludeMOT) > 0 {
         //params.Set("includedMeans", "1")
         for _, mot := range tr.IncludeMOT {
-            params.Set("inclMOT_" + strconv.Itoa(int(*mot)), "on")
+            params.Set("inclMOT_" + strconv.Itoa(int(mot)), "on")
         }
     }
     return params
@@ -224,6 +224,39 @@ func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr
          Destination:   destination,
          Time:          time,
          DepArr:        depArr,
+    }
+
+    res, err := efa.DoTripRequest(&req)
+    if err != nil {
+        return nil, err
+    }
+    return res.Routes, nil
+}
+
+func (efa *EFAProvider) TripVia(origin, via, destination EFAStop, time time.Time, depArr string) ([]*EFARoute, error) {
+    req := TripRequest{
+         Origin:        origin,
+         Via:           via,
+         Destination:   destination,
+         Time:          time,
+         DepArr:        depArr,
+    }
+
+    res, err := efa.DoTripRequest(&req)
+    if err != nil {
+        return nil, err
+    }
+    return res.Routes, nil
+}
+
+func (efa *EFAProvider) TripUsingMot(origin, destination EFAStop, time time.Time, depArr string, mots []EFAMotType) ([]*EFARoute, error) {
+    //TODO: add mobility and routing preferences
+    req := TripRequest{
+         Origin:        origin,
+         Destination:   destination,
+         Time:          time,
+         DepArr:        depArr,
+         IncludeMOT:    mots,
     }
 
     res, err := efa.DoTripRequest(&req)
