@@ -109,6 +109,26 @@ func (dr *DepartureRequest) GetParams() url.Values {
 	return params
 }
 
+func (efa *EFAProvider) DoDepartureRequest(req *DepartureRequest) (*departureMonitorResult, error) {
+	var rt string
+
+	if efa.EnableRealtime {
+		rt = "1"
+	} else {
+		rt = "0"
+	}
+
+	var result departureMonitorResult
+    params := req.GetParams()
+    params.Set("useRealtime", rt)
+
+	if err := efa.postRequest(&result, params); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // Departures performs a stateless dm_request for the corresponding stopID and
 // returns an array of EFADepartures. Use time.Now() as the second argument in
 // order to get the very next departures. The third argument determines how
@@ -118,14 +138,6 @@ func (efa *EFAProvider) Departures(stopID int, due time.Time, results int) ([]*E
 }
 
 func (efa *EFAProvider) DeparturesForLines(stopID int, due time.Time, results int, lines []*EFAServingLine) ([]*EFADeparture, error) {
-	var rt string
-
-	if efa.EnableRealtime {
-		rt = "1"
-	} else {
-		rt = "0"
-	}
-
 	req := DepartureRequest{
 		StopId:		stopID,
 		Time:		due,
@@ -133,16 +145,11 @@ func (efa *EFAProvider) DeparturesForLines(stopID int, due time.Time, results in
 		Lines:      lines,
 	}
 
-	params := req.GetParams()
-	params.Set("useRealtime", rt)
-
-	var result departureMonitorResult
-
-	if err := efa.postRequest(&result, params); err != nil {
-		return nil, err
-	}
-
-	return result.Departures, nil
+    res, err := efa.DoDepartureRequest(&req)
+    if err != nil {
+        return nil, err
+    }
+    return res.Departures, nil
 }
 
 // Lines performs a stateless dm_request for the corresponding stopID and
@@ -153,13 +160,9 @@ func (efa *EFAProvider) Lines(stopID int) ([]*EFAServingLine, error) {
 		Time:		time.Now(),
 	}
 
-	params := req.GetParams()
-
-	var result departureMonitorResult
-
-	if err := efa.postRequest(&result, params); err != nil {
-		return nil, err
-	}
-
-	return result.Lines, nil
+    res, err := efa.DoDepartureRequest(&req)
+    if err != nil {
+        return nil, err
+    }
+    return res.Lines, nil
 }
