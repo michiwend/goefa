@@ -170,6 +170,7 @@ type TripRequest struct {
     Destination     EFAStop
     Via             EFAStop
     IncludeMOT      []EFAMotType
+    Results         int
 }
 
 func (tr *TripRequest) getDefaultParams() url.Values {
@@ -179,7 +180,6 @@ func (tr *TripRequest) getDefaultParams() url.Values {
         "type_origin":                  {"any"},
         "type_destination":             {"any"},
         "type_via":                     {"any"},
-        "calcNumberOfTrips":            {"10"},
     }
     return params
 }
@@ -197,6 +197,7 @@ func (tr *TripRequest) GetParams() url.Values {
     params.Set("itdTripDateTimeDepArr", tr.DepArr)
     params.Set("nameInfo_origin", strconv.Itoa(tr.Origin.Id))
     params.Set("nameInfo_destination", strconv.Itoa(tr.Destination.Id))
+    params.Set("calcNumberOfTrips", strconv.Itoa(tr.Results))
     if tr.Via.Id != 0 {
         params.Set("name_via", strconv.Itoa(tr.Via.Id))
     }
@@ -218,13 +219,14 @@ func (efa *EFAProvider) DoTripRequest(req *TripRequest) (*tripResult, error) {
     return &result, nil
 }
 
-func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr string) ([]*EFARoute, error) {
+func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr string, results int) ([]*EFARoute, error) {
     //TODO: add mobility and routing preferences
     req := TripRequest{
          Origin:        origin,
          Destination:   destination,
          Time:          time,
          DepArr:        depArr,
+         Results:       results,
     }
 
     res, err := efa.DoTripRequest(&req)
@@ -234,13 +236,14 @@ func (efa *EFAProvider) Trip(origin, destination EFAStop, time time.Time, depArr
     return res.Routes, nil
 }
 
-func (efa *EFAProvider) TripVia(origin, via, destination EFAStop, time time.Time, depArr string) ([]*EFARoute, error) {
+func (efa *EFAProvider) TripVia(origin, via, destination EFAStop, time time.Time, depArr string, results int) ([]*EFARoute, error) {
     req := TripRequest{
          Origin:        origin,
          Via:           via,
          Destination:   destination,
          Time:          time,
          DepArr:        depArr,
+         Results:       results,
     }
 
     res, err := efa.DoTripRequest(&req)
@@ -250,7 +253,7 @@ func (efa *EFAProvider) TripVia(origin, via, destination EFAStop, time time.Time
     return res.Routes, nil
 }
 
-func (efa *EFAProvider) TripUsingMot(origin, destination EFAStop, time time.Time, depArr string, mots []EFAMotType) ([]*EFARoute, error) {
+func (efa *EFAProvider) TripUsingMot(origin, destination EFAStop, time time.Time, depArr string, mots []EFAMotType, results int) ([]*EFARoute, error) {
     //TODO: add mobility and routing preferences
     req := TripRequest{
          Origin:        origin,
@@ -258,6 +261,7 @@ func (efa *EFAProvider) TripUsingMot(origin, destination EFAStop, time time.Time
          Time:          time,
          DepArr:        depArr,
          IncludeMOT:    mots,
+         Results:       results,
     }
 
     res, err := efa.DoTripRequest(&req)
