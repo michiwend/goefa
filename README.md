@@ -1,6 +1,9 @@
 goefa
 =====
 
+## Important:
+There is [another fork](https://github.com/muesli/goefa), please take a look at that first, as I will try to port all features I added here to that fork in the future. 
+
 package goefa implements a go (golang) client library to access data of public
 transport companies which provide an EFA interface. You can search a stop, get
 its next departures or request a trip.
