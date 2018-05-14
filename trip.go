@@ -179,6 +179,7 @@ func (tr *TripRequest) getDefaultParams() url.Values {
         "type_origin":                  {"any"},
         "type_destination":             {"any"},
         "type_via":                     {"any"},
+        "calcNumberOfTrips":            {"10"},
     }
     return params
 }
