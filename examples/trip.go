@@ -14,6 +14,7 @@ func main() {
 	pname := flag.String("provider", "mvv", "Short name for the EFA Provider")
     start := flag.String("start", "Moosach", "Start station for Trip")
     destination := flag.String("destination", "Obersendling", "Destination for Trip")
+	results := flag.Int("results", 5, "How many results to show")
     flag.Parse()
 
     provider, err := goefa.ProviderFromJson(*pname)
@@ -38,7 +39,7 @@ func main() {
 
     to := stops[0]
 
-    routes, err := provider.Trip(*from, *to, time.Now(), "dep")
+    routes, err := provider.Trip(*from, *to, time.Now(), "dep", *results)
     
     if err != nil {
         log.Panic(err)
