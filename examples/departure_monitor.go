@@ -27,7 +27,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/michiwend/goefa"
+	"github.com/leftshift/goefa"
 )
 
 func main() {
