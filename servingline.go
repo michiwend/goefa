@@ -51,6 +51,7 @@ type EFAServingLine struct {
 	Direction string `xml:"direction,attr"`
 	Index     string `xml:"index,attr"`
 	Number    string `xml:"number,attr"`
+    Stateless string `xml:"stateless,attr"`
 
 	MotType EFAMotType `xml:"motType,attr"`
 

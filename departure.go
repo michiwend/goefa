@@ -34,7 +34,7 @@ type EFADepartureArrival struct {
 	MapName      string `xml:"mapName,attr"`
 	Platform     string `xml:"platform,attr"`
 	PlatformName string `xml:"platformName,attr"`
-	StopID       int    `xml:"displayName,attr"`
+	StopID       int    `xml:"stopID,attr"`
 	StopName     string `xml:"stopName,attr"`
 	Lat          int64  `xml:"x,attr"`
 	Lng          int64  `xml:"y,attr"`
@@ -53,27 +53,63 @@ type EFADeparture struct {
 	EFADepartureArrival `xml:"itdDeparture"`
 }
 
+type odv struct {
+    OdvPlace struct {
+    }
+    OdvName struct {
+        State string `xml:"state,attr"`
+    } `xml:"itdOdvName"`
+}
+
 type departureMonitorResult struct {
-	efaResponse
-	Odv struct {
-		OdvPlace struct {
-		}
-		OdvName struct {
-			State string `xml:"state,attr"`
-		} `xml:"itdOdvName"`
-	} `xml:"itdDepartureMonitorRequest>itdOdv"`
-	Departures []*EFADeparture `xml:"itdDepartureMonitorRequest>itdDepartureList>itdDeparture"`
+	EFAResponse
+	Odv odv `xml:"itdDepartureMonitorRequest>itdOdv"`
+	Lines		[]*EFAServingLine	`xml:"itdDepartureMonitorRequest>itdServingLines>itdServingLine"`
+	Departures	[]*EFADeparture		`xml:"itdDepartureMonitorRequest>itdDepartureList>itdDeparture"`
 }
 
 func (d *departureMonitorResult) endpoint() string {
 	return "XML_DM_REQUEST"
 }
 
-// Departures performs a stateless dm_request for the corresponding stopID and
-// returns an array of EFADepartures. Use time.Now() as the second argument in
-// order to get the very next departures. The third argument determines how
-// many results will be returned by EFA.
-func (efa *EFAProvider) Departures(stopID int, due time.Time, results int) ([]*EFADeparture, error) {
+type DepartureRequest struct {
+	Params				*url.Values
+	StopId				int
+	Time				time.Time
+	Results				int
+	Lines				[]*EFAServingLine
+}
+
+func (dr *DepartureRequest) getDefaultParams() url.Values {
+	params := url.Values{
+		"type_dm":				{"any"},
+		"locationServerActive": {"1"},
+		"mode":					{"direct"},
+		"stateless":			{"1"},
+	}
+	return params
+}
+
+func (dr *DepartureRequest) GetParams() url.Values {
+	var params url.Values
+	if dr.Params == nil {
+		params = dr.getDefaultParams()
+	} else {
+		params = *dr.Params
+	}
+
+	params.Set("name_dm", strconv.Itoa(dr.StopId))
+	params.Set("itdDate", dr.Time.Format("20060102"))
+	params.Set("itdTime", dr.Time.Format("1504"))
+	params.Set("limit", strconv.Itoa(dr.Results))
+
+	for _, line := range dr.Lines {
+		params.Add("line", line.Stateless)
+	}
+	return params
+}
+
+func (efa *EFAProvider) DoDepartureRequest(req *DepartureRequest) (*departureMonitorResult, error) {
 	var rt string
 
 	if efa.EnableRealtime {
@@ -82,25 +118,51 @@ func (efa *EFAProvider) Departures(stopID int, due time.Time, results int) ([]*E
 		rt = "0"
 	}
 
-	params := url.Values{
-		"type_dm":              {"any"},
-		"name_dm":              {strconv.Itoa(stopID)},
-		"locationServerActive": {"1"},
-		"useRealtime":          {rt},
-		"dmLineSelection":      {"all"}, //FIXME enable line selection
-		"limit":                {strconv.Itoa(results)},
-		"mode":                 {"direct"},
-		"stateless":            {"1"},
-		"itdDate":              {due.Format("20060102")},
-		"itdTime":              {due.Format("1504")},
-	}
-
 	var result departureMonitorResult
+    params := req.GetParams()
+    params.Set("useRealtime", rt)
 
 	if err := efa.postRequest(&result, params); err != nil {
 		return nil, err
 	}
 
-	return result.Departures, nil
+	return &result, nil
+}
 
+// Departures performs a stateless dm_request for the corresponding stopID and
+// returns an array of EFADepartures. Use time.Now() as the second argument in
+// order to get the very next departures. The third argument determines how
+// many results will be returned by EFA.
+func (efa *EFAProvider) Departures(stopID int, due time.Time, results int) ([]*EFADeparture, error) {
+    return efa.DeparturesForLines(stopID, due, results, nil)
+}
+
+func (efa *EFAProvider) DeparturesForLines(stopID int, due time.Time, results int, lines []*EFAServingLine) ([]*EFADeparture, error) {
+	req := DepartureRequest{
+		StopId:		stopID,
+		Time:		due,
+		Results:	results,
+		Lines:      lines,
+	}
+
+    res, err := efa.DoDepartureRequest(&req)
+    if err != nil {
+        return nil, err
+    }
+    return res.Departures, nil
+}
+
+// Lines performs a stateless dm_request for the corresponding stopID and
+// returns an array of EFAServingLines.
+func (efa *EFAProvider) Lines(stopID int) ([]*EFAServingLine, error) {
+	req := DepartureRequest{
+		StopId:		stopID,
+		Time:		time.Now(),
+	}
+
+    res, err := efa.DoDepartureRequest(&req)
+    if err != nil {
+        return nil, err
+    }
+    return res.Lines, nil
 }

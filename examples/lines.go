@@ -25,7 +25,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/leftshift/goefa"
 )
@@ -34,7 +33,6 @@ func main() {
 
 	pname := flag.String("provider", "avv", "Short name for the EFA Provider")
 	query := flag.String("stop", "Koenigsplatz", "The stop name to search for")
-	results := flag.Int("results", 5, "How many results to show")
 	flag.Parse()
 
 	myprovider, err := goefa.ProviderFromJson(*pname)
@@ -85,29 +83,21 @@ func main() {
 		mystop = stops[0]
 		fmt.Println("Stop identified: " + mystop.Name)
 	}
-	fmt.Println("Your next departures:")
+    fmt.Println("Lines serving this station:")
 
-	departures, err := mystop.Departures(time.Now(), *results)
+	lines, err := mystop.Lines()
 
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	for _, dep := range departures {
+	for _, line := range lines {
 
-		plu := " "
-		if dep.Countdown != 1 {
-			plu = "s"
-		}
-
-		fmt.Printf("%17s %-5s due in %-2d minute%s (%s) --> %s\n",
-			dep.ServingLine.MotType.String(),
-			dep.ServingLine.Number,
-			dep.Countdown,
-			plu,
-			dep.DateTime.Format("15:04"),
-			dep.ServingLine.Direction)
+		fmt.Printf("%17s %-5s --> %s\n",
+			line.MotType.String(),
+			line.Number,
+			line.Direction)
 
 	}
 

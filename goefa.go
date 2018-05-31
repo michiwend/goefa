@@ -32,8 +32,8 @@ import (
 	"path"
 	"strings"
 
-	"code.google.com/p/go-charset/charset"
-	_ "code.google.com/p/go-charset/data"
+    "github.com/paulrosania/go-charset/charset"
+     _ "github.com/paulrosania/go-charset/data"
 )
 
 // EFAProvider represents a public transport company that provides access to
@@ -48,7 +48,7 @@ type efaResult interface {
 	endpoint() string
 }
 
-type efaResponse struct {
+type EFAResponse struct {
 	XMLName xml.Name `xml:"itdRequest"`
 
 	client     string `xml:"client,attr"`
